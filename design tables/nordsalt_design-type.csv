@@ -1,0 +1,13 @@
+﻿research_name,type
+timestamp,numeric
+record,numeric
+statname ,character
+pin_b,numeric
+ptemp,numeric
+ltemp,numeric
+dif_a,numeric
+atemp,numeric
+satemp,numeric
+m_above,numeric
+temp_avg,numeric
+temp_raw_std,numeric
