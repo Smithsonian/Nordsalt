@@ -151,8 +151,8 @@ process <- function(mid_dir) {
     # Get date and time for file naming purposes
     # date <- substr(dat[nrow(dat), 1], 1, 10) 
     # time <- substr(dat[nrow(dat), 1], 12, 20) 
-    date <- substr(dat[1,1], 1, 10)
-    time <- substr(dat[1,1], 12, 20)
+    date <- substr(dat[nrow(dat),1], 1, 10)
+    time <- substr(dat[nrow(dat),1], 12, 20)
     time <- chartr(":", "-", time)
     
     # Create unique file name by pulling data from process file in this order:
@@ -435,6 +435,10 @@ norm_nordsalt <- function(files_for_norm, mid_dir, design_path, plotname_path, v
   temp <- design[var_role == "chamber",]
   chamber_vars <-as.vector(temp$cr1000_name)
   chamber_vars <- unique(chamber_vars)
+  chamber_vars <- Filter(function(x) !grepl("dif_a", x), chamber_vars)  
+  chamber_vars <- Filter(function(x) !grepl("satemp", x), chamber_vars)  
+  chamber_vars <- Filter(function(x) !grepl("m_above", x), chamber_vars)  
+
   
   # box-scale vars
   temp <- design[var_role == "box",]
@@ -488,6 +492,10 @@ norm_nordsalt <- function(files_for_norm, mid_dir, design_path, plotname_path, v
     ## create time2 and row_id
     minute_time <- round(minute(dt$timestamp)/increment)*increment
     dt$time2 <- update(dt$timestamp, min = minute_time)
+    
+    #check if there are and duplicate time stamps and if there are, take the average 
+    dt <- aggregate(. ~ time2, data = dt, FUN = function(x) if(is.numeric(x)) mean(x, na.rm = TRUE) else unique(x)[1])
+
     
     # Separate data into transect_level, chamber level and site level by selecting relevant variables
     logger_names <- c(key_vars, "logger", "time2", "row_id",logger_vars)

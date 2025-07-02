@@ -42,9 +42,9 @@ sorter(mid_dir)
 # Edit loggers, tables, and years of data that you want to normalize.
 # The "norm_files" function will filter for the files that fulfill these criteria. 
 # Note that you can only run tables simultaneously if they collect data at the same time interval.
-logger <- c("nordsaltb1", "nordsaltb2", "nordsaltb3")
+logger <- c("nordsaltb1", "nordsaltb2", "nordsaltb3", "nordsalt b1 usb", "nordsalt b2 usb", "nordsalt b3 usb")
 table <- c("export")
-year <- c("2022")
+year <- c("2023")
 
 # Get files for normalization
 files_for_norm <- norm_files(mid_dir, logger, table, year)
@@ -59,3 +59,12 @@ increment <- 60
 norm_nordsalt(files_for_norm, mid_dir, design_path, plotname_path, varname_path, increment)
 
 
+#put files from all 3 pools together
+library(dplyr)
+
+excel_files <- list.files(paste0(mid_dir,"/3_normal/norm_working"), full.names = TRUE)
+
+combined_data <- lapply(excel_files, read.csv) %>%
+  bind_rows()
+
+write.csv(combined_data,paste0(mid_dir,"/3a_normal_combined/nordsalt_export.csv"))
