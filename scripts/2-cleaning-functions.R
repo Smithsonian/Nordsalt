@@ -42,7 +42,7 @@ clean_data <- function(source_dir, output_dir, year){
     
     # Keep only these columns from loggernet
     keep <- c("time2", "logger", "plotid", "treatment", "grazed_ungrazed", "origin", "transect", "transect_s_treatment",
-              "atemp", "ptemp", "ltemp", "satemp", "m_above", "pin_b")
+              "atemp", "ptemp", "ltemp", "pin_b")
     
     dt <- subset(dt, select = keep)
     
@@ -55,11 +55,11 @@ clean_data <- function(source_dir, output_dir, year){
     }
     
     # Apply range limitation functions
-    dt[, m_above := wide_range_clean(m_above)]
+    #dt[, m_above := wide_range_clean(m_above)]
     dt[, atemp := wide_range_clean(atemp)]
     dt[,ltemp := narrow_range_clean(ltemp)]
     dt[,ptemp := narrow_range_clean(ptemp)]
-    dt[,satemp := narrow_range_clean(satemp)]
+   # dt[,satemp := narrow_range_clean(satemp)]
   
     ##create derived variables for cleaning
     dt[,yday := yday(time2)]
@@ -77,8 +77,8 @@ clean_data <- function(source_dir, output_dir, year){
   dt[,ptemp2 := dt$ptemp] #raw data to ghost variable
 
   dt[,m_ptemp := mean_trim(ptemp), by = key2] #mean of zone by hour for each day
-  dt[,m_ptemp_upper := m_ptemp + 3 ,]
-  dt[,m_ptemp_lower := m_ptemp - 3 ,]
+  dt[,m_ptemp_upper := m_ptemp + 4 ,]
+  dt[,m_ptemp_lower := m_ptemp - 4 ,]
 
   dt$ptemp2 <- ifelse(dt$ptemp2 > dt$m_ptemp_upper, NA, dt$ptemp2) #remove more than 3 C away from mean
   dt$ptemp2 <- ifelse(dt$ptemp2 < dt$m_ptemp_lower, NA, dt$ptemp2)
@@ -132,14 +132,14 @@ clean_data <- function(source_dir, output_dir, year){
   # dt$ltemp2 <- ifelse(is.na(dt$ltemp_hr) & is.na(dt$ltemp_2day), NA, dt$ltemp2)
 
   # Surface ----------------------------------------------------------------------
-  dt[,satemp2 := dt$satemp] #raw data to ghost variable
+  #dt[,satemp2 := dt$satemp] #raw data to ghost variable
 
-  dt[,m_satemp:= mean_trim(satemp), by = key2] #mean of zone by hour for each day
-  dt[,m_satemp_upper:= m_satemp + 10 ,] # median boundary
-  dt[,m_satemp_lower:= m_satemp - 10 ,]
+  #dt[,m_satemp:= mean_trim(satemp), by = key2] #mean of zone by hour for each day
+  #dt[,m_satemp_upper:= m_satemp + 10 ,] # median boundary
+  #dt[,m_satemp_lower:= m_satemp - 10 ,]
 
-  dt$satemp2 <- ifelse(dt$satemp2 > dt$m_satemp_upper, NA, dt$satemp2)#remove more than 5 C away from mean
-  dt$satemp2 <- ifelse(dt$satemp2 < dt$m_satemp_lower, NA, dt$satemp2)
+  #dt$satemp2 <- ifelse(dt$satemp2 > dt$m_satemp_upper, NA, dt$satemp2)#remove more than 5 C away from mean
+  #dt$satemp2 <- ifelse(dt$satemp2 < dt$m_satemp_lower, NA, dt$satemp2)
 
   # dt[,satemp_hr:= frollapply(satemp2, 2, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 1 hr
   # # # dt[,satemp_2day:= frollapply(satemp2, 192, sd_rm, fill = NA, align = c("center")), by = "plotid"] # moving window sd for 3 days
@@ -157,22 +157,22 @@ clean_data <- function(source_dir, output_dir, year){
   # dt$satemp2 <- ifelse(is.na(dt$satemp_hr) & is.na(dt$satemp_2day), NA, dt$satemp2)
 
   # Above ----------------------------------------------------------------------
-  dt[,m_above2 := dt$m_above] #raw data to ghost variable
+  #dt[,m_above2 := dt$m_above] #raw data to ghost variable
 
-  dt[,m_m_above:= mean_trim(m_above), by = key2] #mean of zone by hour for each day
-  dt[,m_m_above_upper:= m_m_above + 10 ,] # median boundary
-  dt[,m_m_above_lower:= m_m_above - 10 ,]
+  #dt[,m_m_above:= mean_trim(m_above), by = key2] #mean of zone by hour for each day
+  #dt[,m_m_above_upper:= m_m_above + 10 ,] # median boundary
+  #dt[,m_m_above_lower:= m_m_above - 10 ,]
 
-  dt$m_above2 <- ifelse(dt$m_above2 > dt$m_m_above_upper, NA, dt$m_above2) #remove more than 50% over median
-  dt$m_above2 <- ifelse(dt$m_above2 < dt$m_m_above_lower, NA, dt$m_above2)
+  #dt$m_above2 <- ifelse(dt$m_above2 > dt$m_m_above_upper, NA, dt$m_above2) #remove more than 50% over median
+  #dt$m_above2 <- ifelse(dt$m_above2 < dt$m_m_above_lower, NA, dt$m_above2)
 
-  dt[,m_above_hr:= frollapply(m_above2, 4, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 1 hr
+  #dt[,m_above_hr:= frollapply(m_above2, 4, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 1 hr
   # dt[,m_above_2day:= frollapply(m_above2, 192, sd_rm, fill = NA, align = c("center")), by = "plotid"] # moving window sd for 3 days
 
   # if hourly standard deviation is NOT NA, and hourly stdev is greater than 95% quantile, remove data
-  dt$m_above2 <- ifelse(!is.na(dt$m_above_hr),
-                               ifelse(dt$m_above_hr > quantile(dt$m_above_hr, 0.995, na.rm=TRUE), NA, dt$m_above2),
-                               dt$m_above2) #remove based on sd quantile
+  #dt$m_above2 <- ifelse(!is.na(dt$m_above_hr),
+   #                            ifelse(dt$m_above_hr > quantile(dt$m_above_hr, 0.995, na.rm=TRUE), NA, dt$m_above2),
+    #                           dt$m_above2) #remove based on sd quantile
 # 
 #   # # if 2 day standard deviation is NOT NA, and 2day stdev is greater than 95% quantile, remove data
 #   dt$m_above2 <- ifelse(!is.na(dt$m_above_2day),
@@ -206,10 +206,18 @@ clean_data <- function(source_dir, output_dir, year){
   # 
   # # If standard deviation of hour and 2 day are both NA, then just NA the data...
   # dt$atemp2 <- ifelse(is.na(dt$atemp_hr) & is.na(dt$atemp_2day), NA, dt$atemp2)
+  
+  
+  
+  keep <- c("time2", "logger", "plotid", "treatment", "grazed_ungrazed", "origin", "transect", "transect_s_treatment",
+                 "atemp", "ptemp", "ltemp", "pin_b", "atemp2","ptemp2","ltemp2")
+  
+  dt <- subset(dt, select = keep)
+  
 
   # -------------------------------- Write data ----------------------------------------------
   # Create file name
-  file_name <- paste0(pool,"_",year(dt$time2[1]), "_15min_cleaned.csv")
+  file_name <- paste0(pool,"_",year(dt$time2[1]), "_cleaned.csv")
   out_path <- file.path(output_dir, file_name)
   
   dt$time2 <- format(as.POSIXct(dt$time2, tz="Etc/GMT-1"), format="%Y-%m-%d %H:%M:%S")

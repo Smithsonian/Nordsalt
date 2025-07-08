@@ -59,12 +59,4 @@ increment <- 60
 norm_nordsalt(files_for_norm, mid_dir, design_path, plotname_path, varname_path, increment)
 
 
-#put files from all 3 pools together
-library(dplyr)
 
-excel_files <- list.files(paste0(mid_dir,"/3_normal/norm_working"), full.names = TRUE)
-
-combined_data <- lapply(excel_files, read.csv) %>%
-  bind_rows()
-
-write.csv(combined_data,paste0(mid_dir,"/3a_normal_combined/nordsalt_export.csv"))
