@@ -77,8 +77,8 @@ clean_data <- function(source_dir, output_dir, year){
   dt[,ptemp2 := dt$ptemp] #raw data to ghost variable
 
   dt[,m_ptemp := mean_trim(ptemp), by = key2] #mean of zone by hour for each day
-  dt[,m_ptemp_upper := m_ptemp + 4 ,]
-  dt[,m_ptemp_lower := m_ptemp - 4 ,]
+  dt[,m_ptemp_upper := m_ptemp + 5 ,]
+  dt[,m_ptemp_lower := m_ptemp - 5 ,]
 
   dt$ptemp2 <- ifelse(dt$ptemp2 > dt$m_ptemp_upper, NA, dt$ptemp2) #remove more than 3 C away from mean
   dt$ptemp2 <- ifelse(dt$ptemp2 < dt$m_ptemp_lower, NA, dt$ptemp2)
@@ -107,8 +107,8 @@ clean_data <- function(source_dir, output_dir, year){
   dt[,ltemp2 := dt$ltemp] #raw data to ghost variable
 
   dt[,m_ltemp:= mean_trim(ltemp), by = key2] # #mean of zone by hour for each day
-  dt[,m_ltemp_upper:= m_ltemp + 3 ,] # median boundary
-  dt[,m_ltemp_lower:= m_ltemp - 3 ,]
+  dt[,m_ltemp_upper:= m_ltemp + 5 ,] # median boundary
+  dt[,m_ltemp_lower:= m_ltemp - 5 ,]
 
   dt$ltemp2 <- ifelse(dt$ltemp2 > dt$m_ltemp_upper, NA, dt$ltemp2)#remove more than 5 C away from mean
   dt$ltemp2 <- ifelse(dt$ltemp2 < dt$m_ltemp_lower, NA, dt$ltemp2)
