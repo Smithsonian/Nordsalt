@@ -7,39 +7,36 @@ nameing_guide <- data.frame(reference =  c("b1","b2","b3","g","u","d","f","s","a
 
 #load the NORDSALT Data table 
 pool <- "b1"
-year <- "2022"
-dir <- paste0(Sys.getenv("dropbox_filepath"),"Nordsalt/DATA/data_process/DATA/5_derived/")
+year <- "2023"
+variable <- "atemp"
+dir <- paste0(Sys.getenv("dropbox_filepath"),"Nordsalt/DATA/data_process/DATA/4c_normal_diffs/")
 
-dt_nordsalt <- read.csv(paste0(dir,pool,"_",year,"_15min_cleaned_derived.csv"))
+dt_nordsalt <- read.csv(paste0(dir,"nordsalt_export.csv"))
 
 #get a data table for atemps
-dt_nordsalt_air <- dt_nordsalt %>%
-  select(time2, contains("atemp"))
+dt_nordsalt_var <- dt_nordsalt %>%
+  filter(transect == pool, year(time2) == year) %>%
+  select(time2, contains(variable), treatment, transect, origin, grazed_ungrazed)
 
-#get a data table for ptemps
-dt_nordsalt2 <- dt_nordsalt %>%
-  select(time2, airtemp_clean, pintemp_clean, lagtemp_clean, treatment, origin, grazed_ungrazed, z_pin_delta_all, z_lag_delta_all)
-
-###################################remake the plots shown in the manuscript #########################################
+dt_nordsalt_var$time2 <- as.POSIXct(dt_nordsalt_var$time2, format = "%Y-%m-%d %H:%M:%S")
 
 ################################make a plot of a temp across different warming levels#####################################################
 
 ## make a plot of the warming data for this box 
 pool_name <- nameing_guide$text[nameing_guide$reference == pool]
 
-# Graph
-graph <- dt_nordsalt2 %>%
+# Graph the temperatures of the selected varable 
+graph <- dt_nordsalt_var %>%
   ggplot()+
-  geom_line(data = dt, aes(x = TIMESTAMP, y = as.numeric(temperature_c), colour = warming_level), na.rm = T)+
-  geom_line(data = target_ref, aes(x = TIMESTAMP, y = ptemp, colour = treatment), na.rm = T,linetype = "dashed", alpha = 0.75)+
-  ggtitle(paste0("Test"))+
+  geom_line(data = dt_nordsalt_var, aes(x = time2, y = !!sym(paste0(variable, "2")), colour = treatment), na.rm = T)+
+  ggtitle(paste0("Values of ", variable, " from the ", year, " experiment in transect ", pool))+
   scale_color_manual(labels = c("w0","w1","w2","w3","w4"), 
                      values = c("#8ABFE5",
                                 "#507963",
                                 "#8B8000",
                                 "#FDC835" ,
                                 "#F75077"))+
-  theme(legend.title=element_blank()) +  labs(x = "Timestamp", y = expression("Soil Temperature " (degree~C)))+
+  theme(legend.title=element_blank()) +  labs(x = "Timestamp", y = paste0("clean ", variable, " values"))+
   theme_light()+
   theme(axis.title.x = element_text(size = 16, face = "bold"),
         axis.title.y = element_text(size=16, face = "bold"))+
@@ -47,7 +44,29 @@ graph <- dt_nordsalt2 %>%
         axis.text.y = element_text(size=14, face = "bold"))+
   theme(legend.title=element_blank())
 
-ggsave(paste0(Sys.getenv("repository_filepath"),"Nordsalt/figures/Warming_Samples/",var,"_",g_ug,"_",origin_of_plant,"_",pool,".png"), plot = graph)
+
+graph
+
+
+# Graph the temperature differentials  of the selected variable 
+graph <- dt_nordsalt_var %>%
+  ggplot()+
+  geom_line(data = dt_nordsalt_var, aes(x = time2, y = !!sym(paste0("dif_amb_",variable, "_all")), colour = treatment), na.rm = T)+
+  ggtitle(paste0("Difference from ambient mean of ", variable, " from the ", year, " experiment in transect ", pool))+
+  scale_color_manual(labels = c("w0","w1","w2","w3","w4"), 
+                     values = c("#8ABFE5",
+                                "#507963",
+                                "#8B8000",
+                                "#FDC835" ,
+                                "#F75077"))+
+  theme(legend.title=element_blank()) +  labs(x = "Timestamp", y = paste0("clean ", variable, "_diff values"))+
+  theme_light()+
+  theme(axis.title.x = element_text(size = 16, face = "bold"),
+        axis.title.y = element_text(size=16, face = "bold"))+
+  theme(axis.text.x = element_text(size=14, face = "bold"),
+        axis.text.y = element_text(size=14, face = "bold"))+
+  theme(legend.title=element_blank())
 
 
 
+graph

@@ -1,3 +1,9 @@
+# NORSDALT Experiment processing scripts
+## Originated May 2025 by Liz Westbrook for processing MERIT data. 
+
+#This script creates new columns in the NORDSALT data that are calculated averages of the mean ambient air, 
+#pin, and lag temperatures taken across both singular transects and all transects. 
+
 ## add the ambient averages columns 
 library(tidyverse)
 library(data.table)

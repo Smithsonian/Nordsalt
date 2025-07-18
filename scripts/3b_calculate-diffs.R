@@ -1,3 +1,10 @@
+# NORSDALT Experiment processing scripts
+## Originated May 2025 by Liz Westbrook for processing MERIT data. 
+
+#This script creates new columns in the NORDSALT data that are calculated differences between transect 
+#and full-experiment ambient averages and the temperatures recorded by each treatment.  
+
+
 #calculate differentials
 dt <- read.csv(paste0(Sys.getenv("dropbox_filepath"),"Nordsalt/DATA/data_process/DATA/4b_normal_avgs/nordsalt_export.csv"))
 

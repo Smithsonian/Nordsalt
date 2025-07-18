@@ -1,4 +1,4 @@
-# MERIT data processing
+#Nordsalt data processing
 
 # Generally:
 # 1. bulk process the loggernet, run process function to turn .DAT files into .CSV files by zone 
@@ -358,7 +358,7 @@ norm_files <- function(mid_dir, logger, table, year) {
 }
 
 ##  ========================== Function 8: norm_merit ========================================
-# FUNCTION 8: norm_merit(source_dir, norm_dir, table_type, design_table, plot_names, increment)
+# FUNCTION 8: norm_nordsalt(source_dir, norm_dir, table_type, design_table, plot_names, increment)
 # The two key files needed for this are:
 # 1) design_table: this connects the experimental design to the cr1000 variable name and the scale link for data. 
 # 2) plot_names: this contains the experimental design and the treatments in each plot.

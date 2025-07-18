@@ -1,5 +1,5 @@
 #NORDSALT Experiment processing scripts
-## Selina Cheng - originated December 5, 2022. Modified for NORDSALT data April 2025 by Liz Westbrook
+##  Modified for NORDSALT data April 2025 by Liz Westbrook. Original scripts produced for processing MERIT data by Selina Cheng December 2022. 
 # This script runs all the functions that were created in "0-loggernet-functions.R"
 
 ## ========================== Set up: Load functions ===================================================

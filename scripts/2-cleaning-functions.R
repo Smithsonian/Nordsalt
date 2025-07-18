@@ -1,5 +1,5 @@
 # NORSDALT Experiment processing scripts
-## Selina Cheng - originated September 1, 2023. Adapted for NORDSALT by Liz Westbrook 04/25
+## Adapted for NORDSALT by Liz Westbrook 04/25. Original script developed by Selina Cheng for MERIT data processing September 2022. 
 
 # This script runs functions to clean SD data that were filled with loggernet data by:
 # 1) Using range limitation functions to roughly clean the data
