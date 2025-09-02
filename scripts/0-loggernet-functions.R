@@ -358,7 +358,64 @@ norm_files <- function(mid_dir, logger, table, year) {
 }
 
 ##  ========================== Function 8: norm_merit ========================================
-# FUNCTION 8: norm_nordsalt(source_dir, norm_dir, table_type, design_table, plot_names, increment)
+# FUNCTION 8: norm_nordsaltdt <- dt_2022
+
+ambient_dt <- dt %>% 
+  filter(treatment == "w0")
+
+setDT(ambient_dt)
+
+# Create ambient deltas for all ambients
+group <- c("time2", "origin", "transect")
+group2 <- c("time2","origin")
+
+# create the ambient means. 
+ambient_dt[,mean_amb_atemp_transect:= mean_rm(atemp2), by = group]
+ambient_dt[,mean_amb_atemp_all:= mean_rm(atemp2), by = group2]
+ambient_dt[,mean_amb_ptemp_transect:= mean_rm(ptemp2), by = group]
+ambient_dt[,mean_amb_ptemp_all:= mean_rm(ptemp2), by = group2]
+ambient_dt[,mean_amb_ltemp_transect:= mean_rm(ltemp2), by = group]
+ambient_dt[,mean_amb_ltemp_all:= mean_rm(ltemp2), by = group2]
+
+
+
+##test that the data set got set up correctly
+test_dt <- ambient_dt %>%
+  filter(time2 == "2022-03-19 10:00:00")
+
+
+## replace missing values with the ambient averages column 
+ambient_dt$atemp2[is.na(ambient_dt$atemp2)] <- ambient_dt$mean_amb_atemp_all[is.na(ambient_dt$atemp2)]
+ambient_dt$ptemp2[is.na(ambient_dt$ptemp2)] <- ambient_dt$mean_amb_ptemp_all[is.na(ambient_dt$ptemp2)]
+ambient_dt$ltemp2[is.na(ambient_dt$ltemp2)] <- ambient_dt$mean_amb_ltemp_all[is.na(ambient_dt$ltemp2)]
+
+
+## Merge the ambient averages back into the larger data set. 
+
+dt_new <- merge(dt, ambient_dt[, .(time2, origin, transect,
+                               mean_amb_atemp_transect,
+                               mean_amb_ptemp_transect,
+                               mean_amb_ltemp_transect)],
+            by = c("time2", "origin", "transect"), all.x = TRUE)
+
+dt_new <- merge(dt_new, ambient_dt[, .(time2, origin,
+                               mean_amb_atemp_all,
+                               mean_amb_ptemp_all,
+                               mean_amb_ltemp_all)],
+            by = c("time2", "origin"), all.x = TRUE)
+
+
+dt_new <- unique(dt_new) %>%
+  arrange(plotid, time2)
+
+
+##test that the data set got set up correctly
+test_dt <- dt_new %>%
+  filter(time2 == "2023-03-19 14:00:00")
+
+
+write.csv(dt_new,paste0(Sys.getenv("dropbox_filepath"),"Nordsalt/DATA/data_process/DATA/4b_normal_avgs/nordsalt_export_2022.csv"), row.names = F)
+(source_dir, norm_dir, table_type, design_table, plot_names, increment)
 # The two key files needed for this are:
 # 1) design_table: this connects the experimental design to the cr1000 variable name and the scale link for data. 
 # 2) plot_names: this contains the experimental design and the treatments in each plot.

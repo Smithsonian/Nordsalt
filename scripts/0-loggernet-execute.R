@@ -44,7 +44,7 @@ sorter(mid_dir)
 # Note that you can only run tables simultaneously if they collect data at the same time interval.
 logger <- c("nordsaltb1", "nordsaltb2", "nordsaltb3", "nordsalt b1 usb", "nordsalt b2 usb", "nordsalt b3 usb")
 table <- c("export")
-year <- c("2023")
+year <- c("2022")
 
 # Get files for normalization
 files_for_norm <- norm_files(mid_dir, logger, table, year)

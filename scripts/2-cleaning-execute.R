@@ -25,7 +25,7 @@ output_dir <- file.path(norm_dir, "4_cleaned/clean_working")
 # Run function that cleans data
 # 1) Using coarse range limitation functions
 # 2) Using narrower rolling standard deviation functions
-year <- "2022"
+year <- "2023"
 clean_data(source_dir, output_dir, year)
 
 #put files from all 3 pools together

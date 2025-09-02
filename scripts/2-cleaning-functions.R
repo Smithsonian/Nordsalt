@@ -55,12 +55,18 @@ clean_data <- function(source_dir, output_dir, year){
     }
     
     # Apply range limitation functions
-    #dt[, m_above := wide_range_clean(m_above)]
     dt[, atemp := wide_range_clean(atemp)]
+    print(paste0("Values removed from ATEMP by wide range clean: ",
+                 sum(is.na(dt$atemp))))
+    
     dt[,ltemp := narrow_range_clean(ltemp)]
+    print(paste0("Values removed from LTEMP by narrow range clean: ",
+                 sum(is.na(dt$ltemp))))
+    
     dt[,ptemp := narrow_range_clean(ptemp)]
-   # dt[,satemp := narrow_range_clean(satemp)]
-  
+    print(paste0("Values removed from PTEMP by narrow range clean: ",
+                 sum(is.na(dt$ptemp))))
+    
     ##create derived variables for cleaning
     dt[,yday := yday(time2)]
     dt[,hour := hour(time2)]
@@ -74,115 +80,85 @@ clean_data <- function(source_dir, output_dir, year){
   # If one is NA, the code will evaluate the other
   # If both hourly and 2day stdev are NA, then just set data to NA (this should be very few instances, << 100)
   # PinTemp ----------------------------------------------------------------------
+  # ##Using rolling average
+  #   dt[,ptemp3 := dt$ptemp] #raw data to ghost variable
+  # 
+  # dt[,m_ptemp := mean_trim(ptemp), by = key2] #mean of zone by hour for each day
+  # dt[,m_ptemp_upper := m_ptemp + 5 ,]
+  # dt[,m_ptemp_lower := m_ptemp - 5 ,]
+  # 
+  # dt$ptemp3 <- ifelse(dt$ptemp3 > dt$m_ptemp_upper, NA, dt$ptemp3) #remove more than 3 C away from mean
+  # dt$ptemp3 <- ifelse(dt$ptemp3 < dt$m_ptemp_lower, NA, dt$ptemp3)
+  # 
+  # dt[, roll_mean_pintemp := frollapply(ptemp, 4, mean_rm, fill = NA, align = c("center")), by = "plotid"]
+  # dt$ptemp3 <- ifelse(dt$ptemp3 > (dt$roll_mean_pintemp + 3) |
+  #                                dt$ptemp3 < (dt$roll_mean_pintemp - 3),
+  #                              NA, dt$ptemp3)
+  # 
+  # print(paste0("Values removed from PTEMP by Rolling Average clean: ",
+  #              sum(is.na(dt$ptemp3)) - sum(is.na(dt$ptemp))))
+  
+  ##Using Standard Deviation. 
+  ##Using rolling standard deviation
   dt[,ptemp2 := dt$ptemp] #raw data to ghost variable
-
-  dt[,m_ptemp := mean_trim(ptemp), by = key2] #mean of zone by hour for each day
-  dt[,m_ptemp_upper := m_ptemp + 5 ,]
-  dt[,m_ptemp_lower := m_ptemp - 5 ,]
-
-  dt$ptemp2 <- ifelse(dt$ptemp2 > dt$m_ptemp_upper, NA, dt$ptemp2) #remove more than 3 C away from mean
+  
+  dt[,m_ptemp:= mean_trim(ptemp), by = key2] # median line by site
+  dt[,m_ptemp_upper:= m_ptemp + 5 ,] # median boundary
+  dt[,m_ptemp_lower:= m_ptemp - 5 ,]
+  
+  dt$ptemp2 <- ifelse(dt$ptemp2 > dt$m_ptemp_upper, NA, dt$ptemp2) #remove more than 50% over median
   dt$ptemp2 <- ifelse(dt$ptemp2 < dt$m_ptemp_lower, NA, dt$ptemp2)
   
-  dt[, roll_mean_pintemp := frollapply(ptemp, 4, mean_rm, fill = NA, align = c("center")), by = "plotid"]
-  dt$ptemp2 <- ifelse(dt$ptemp2 > (dt$roll_mean_pintemp + 0.5) |
-                                 dt$ptemp2 < (dt$roll_mean_pintemp - 0.5),
-                               NA, dt$ptemp2)
-
-  # dt[, ptemp_hr := frollapply(ptemp2, 4, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 1 hr
-  # # dt[, ptemp_2day := frollapply(ptemp2, 192, sd_rm, fill = NA, align = c("center")), by = "plotid"] # moving window sd for 2 days
-  # 
-  # # if hourly standard deviation is NOT NA, and hourly stdev is greater than 95% quantile, remove data
-  # # Change quantile threshold
-  # dt$ptemp2 <- ifelse(!is.na(dt$ptemp_hr),
-  #                            ifelse(dt$ptemp_hr > quantile(dt$ptemp_hr, 0.995, na.rm = TRUE), NA, dt$ptemp2), dt$ptemp2) #remove data based on sd quantile
-
-  # If 2 day standard deviation is NOT NA, run the quantile test
-  # dt$ptemp2 <- ifelse(!is.na(dt$ptemp_2day), 
-  #                            ifelse(dt$ptemp_2day > quantile(dt$ptemp_2day, 0.99, na.rm = TRUE), NA, dt$ptemp2), dt$ptemp2)
+  dt[,ptemp_hr:= frollapply(ptemp2, 4, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 4 hrs
   
-  # If standard deviation of hour and 2 day are both NA, then just NA the data...
-  # dt$ptemp2 <- ifelse(is.na(dt$ptemp_hr) & is.na(dt$ptemp_2day), NA, dt$ptemp2)
+  # if hourly standard deviation is NOT NA, and hourly stdev is greater than 95% quantile, remove data
+  dt$ptemp2 <- ifelse(!is.na(dt$ptemp_hr),
+                      ifelse(dt$ptemp_hr > quantile(dt$ptemp_hr, 0.995, na.rm=TRUE), NA, dt$ptemp2),
+                      dt$ptemp2)
+  
+  print(paste0("Values removed from PTEMP by Standard Deviation clean: ",
+               sum(is.na(dt$ptemp2)) - sum(is.na(dt$ptemp))))
   
   # # ltemp ----------------------------------------------------------------------
+  # ##Using Rolling average
+  # dt[,ltemp3 := dt$ltemp] #raw data to ghost variable
+  # 
+  # dt[,m_ltemp:= mean_trim(ltemp), by = key2] # #mean of zone by hour for each day
+  # dt[,m_ltemp_upper:= m_ltemp + 5 ,] # median boundary
+  # dt[,m_ltemp_lower:= m_ltemp - 5 ,]
+  # 
+  # dt$ltemp3 <- ifelse(dt$ltemp3 > dt$m_ltemp_upper, NA, dt$ltemp3)#remove more than 5 C away from mean
+  # dt$ltemp3 <- ifelse(dt$ltemp3 < dt$m_ltemp_lower, NA, dt$ltemp3)
+  # 
+  # dt[, m_ltemp_hr := frollapply(ltemp, 4, mean_trim, fill = NA, align = c("center"))]
+  # dt$ltemp3 <- ifelse(dt$ltemp3 > (dt$m_ltemp_hr + 3) | dt$ltemp3 < (dt$m_ltemp_hr - 3), 
+  #                                         NA, dt$ltemp3)
+  # 
+  # print(paste0("Values removed from LTEMP by Rolling Average clean: ",
+  #              sum(is.na(dt$ltemp3)) - sum(is.na(dt$ltemp))))
+  
+  ##Using rolling standard deviation
   dt[,ltemp2 := dt$ltemp] #raw data to ghost variable
-
-  dt[,m_ltemp:= mean_trim(ltemp), by = key2] # #mean of zone by hour for each day
+  
+  dt[,m_ltemp:= mean_trim(ltemp), by = key2] # median line by site
   dt[,m_ltemp_upper:= m_ltemp + 5 ,] # median boundary
   dt[,m_ltemp_lower:= m_ltemp - 5 ,]
-
-  dt$ltemp2 <- ifelse(dt$ltemp2 > dt$m_ltemp_upper, NA, dt$ltemp2)#remove more than 5 C away from mean
+  
+  dt$ltemp2 <- ifelse(dt$ltemp2 > dt$m_ltemp_upper, NA, dt$ltemp2) #remove more than 50% over median
   dt$ltemp2 <- ifelse(dt$ltemp2 < dt$m_ltemp_lower, NA, dt$ltemp2)
   
-  # dt[, m_ltemp_hr := frollapply(ltemp, 2, mean_trim, fill = NA, align = c("center"))]
-  # dt$ltemp2 <- ifelse(dt$ltemp2 > (dt$m_ltemp_hr + 0.15) | dt$ltemp2 < (dt$m_ltemp_hr - 0.15), 
-  #                                        NA, dt$ltemp2)
-  
-  # dt[,ltemp_hr:= frollapply(ltemp2, 4, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 1 hr
-  # # dt[,ltemp_2day:= frollapply(ltemp2, 192, sd_rm, fill = NA, align = c("center")), by = "plotid"] # moving window sd for 2 days
-  # 
-  # # if hourly standard deviation is NOT NA, and hourly stdev is greater than 95% quantile, remove data
-  # dt$ltemp2 <- ifelse(!is.na(dt$ltemp_hr),
-  #                            ifelse(dt$ltemp_hr > quantile(dt$ltemp_hr, 0.995, na.rm = TRUE), NA, dt$ltemp2), dt$ltemp2) #remove based on sd quantile
-
-  # # if 2 day standard deviation is NOT NA, and 2day stdev is greater than 95% quantile, remove data
-  # dt$ltemp2 <- ifelse(!is.na(dt$ltemp_2day),
-  #                            ifelse(dt$ltemp_2day > quantile(dt$ltemp_2day, 0.99, na.rm = TRUE), NA, dt$ltemp2), dt$ltemp2)
-  # 
-  # # If standard deviation of hour and 2 day are both NA, then just NA the data...
-  # dt$ltemp2 <- ifelse(is.na(dt$ltemp_hr) & is.na(dt$ltemp_2day), NA, dt$ltemp2)
-
-  # Surface ----------------------------------------------------------------------
-  #dt[,satemp2 := dt$satemp] #raw data to ghost variable
-
-  #dt[,m_satemp:= mean_trim(satemp), by = key2] #mean of zone by hour for each day
-  #dt[,m_satemp_upper:= m_satemp + 10 ,] # median boundary
-  #dt[,m_satemp_lower:= m_satemp - 10 ,]
-
-  #dt$satemp2 <- ifelse(dt$satemp2 > dt$m_satemp_upper, NA, dt$satemp2)#remove more than 5 C away from mean
-  #dt$satemp2 <- ifelse(dt$satemp2 < dt$m_satemp_lower, NA, dt$satemp2)
-
-  # dt[,satemp_hr:= frollapply(satemp2, 2, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 1 hr
-  # # # dt[,satemp_2day:= frollapply(satemp2, 192, sd_rm, fill = NA, align = c("center")), by = "plotid"] # moving window sd for 3 days
-  # # 
-  # # if hourly standard deviation is NOT NA, and hourly stdev is greater than 95% quantile, remove data
-  # dt$satemp2 <- ifelse(!is.na(dt$satemp_hr),
-  #                                ifelse(dt$satemp_hr > quantile(dt$satemp_hr, 0.995, na.rm=TRUE), NA, dt$satemp2),
-  #                                dt$satemp2)# remove based on sd quantile
-  # # # if 2 day standard deviation is NOT NA, and 2day stdev is greater than 95% quantile, remove data
-  # dt$satemp2 <- ifelse(!is.na(dt$satemp_2day),
-  #                                ifelse(dt$satemp_2day > quantile(dt$satemp_2day, 0.99, na.rm=TRUE), NA, dt$satemp2),
-  #                                dt$satemp2)
-  # 
-  # # If standard deviation of hour and 2 day are both NA, then just NA the data...
-  # dt$satemp2 <- ifelse(is.na(dt$satemp_hr) & is.na(dt$satemp_2day), NA, dt$satemp2)
-
-  # Above ----------------------------------------------------------------------
-  #dt[,m_above2 := dt$m_above] #raw data to ghost variable
-
-  #dt[,m_m_above:= mean_trim(m_above), by = key2] #mean of zone by hour for each day
-  #dt[,m_m_above_upper:= m_m_above + 10 ,] # median boundary
-  #dt[,m_m_above_lower:= m_m_above - 10 ,]
-
-  #dt$m_above2 <- ifelse(dt$m_above2 > dt$m_m_above_upper, NA, dt$m_above2) #remove more than 50% over median
-  #dt$m_above2 <- ifelse(dt$m_above2 < dt$m_m_above_lower, NA, dt$m_above2)
-
-  #dt[,m_above_hr:= frollapply(m_above2, 4, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 1 hr
-  # dt[,m_above_2day:= frollapply(m_above2, 192, sd_rm, fill = NA, align = c("center")), by = "plotid"] # moving window sd for 3 days
+  dt[,ltemp_hr:= frollapply(ltemp2, 4, sd_rm, fill = NA, align = c("center")), by = "plotid"] #moving window sd for 4 hrs
 
   # if hourly standard deviation is NOT NA, and hourly stdev is greater than 95% quantile, remove data
-  #dt$m_above2 <- ifelse(!is.na(dt$m_above_hr),
-   #                            ifelse(dt$m_above_hr > quantile(dt$m_above_hr, 0.995, na.rm=TRUE), NA, dt$m_above2),
-    #                           dt$m_above2) #remove based on sd quantile
-# 
-#   # # if 2 day standard deviation is NOT NA, and 2day stdev is greater than 95% quantile, remove data
-#   dt$m_above2 <- ifelse(!is.na(dt$m_above_2day),
-#                                ifelse(dt$m_above_2day > quantile(dt$m_above_2day, 0.99, na.rm=TRUE), NA, dt$m_above2),
-#                                dt$m_above2)
-# 
-#   # If standard deviation of hour and 2 day are both NA, then just NA the data...
-#   dt$m_above2 <- ifelse(is.na(dt$m_above_hr) & is.na(dt$m_above_2day), NA, dt$m_above2)
-
+  dt$ltemp2 <- ifelse(!is.na(dt$ltemp_hr),
+                      ifelse(dt$ltemp_hr > quantile(dt$ltemp_hr, 0.995, na.rm=TRUE), NA, dt$ltemp2),
+                      dt$ltemp2)
+  
+  print(paste0("Values removed from LTEMP by Standard Deviation clean: ",
+               sum(is.na(dt$ptemp2)) - sum(is.na(dt$ptemp))))
+  
   # Air ----------------------------------------------------------------------
+  ##Using rolling standard deviation
   dt[,atemp2 := dt$atemp] #raw data to ghost variable
 
   dt[,m_atemp:= mean_trim(atemp), by = key2] # median line by site
@@ -198,15 +174,29 @@ clean_data <- function(source_dir, output_dir, year){
   # if hourly standard deviation is NOT NA, and hourly stdev is greater than 95% quantile, remove data
   dt$atemp2 <- ifelse(!is.na(dt$atemp_hr),
                              ifelse(dt$atemp_hr > quantile(dt$atemp_hr, 0.995, na.rm=TRUE), NA, dt$atemp2),
-                             dt$atemp2)#remove based on sd quantile
-  # # # if 2 day standard deviation is NOT NA, and 2day stdev is greater than 95% quantile, remove data
-  # dt$atemp2 <- ifelse(!is.na(dt$atemp_2day),
-  #                            ifelse(dt$atemp_2day > quantile(dt$atemp_2day, 0.99, na.rm=TRUE), NA, dt$atemp2),
-  #                            dt$atemp2)
-  # 
-  # # If standard deviation of hour and 2 day are both NA, then just NA the data...
-  # dt$atemp2 <- ifelse(is.na(dt$atemp_hr) & is.na(dt$atemp_2day), NA, dt$atemp2)
+                             dt$atemp2)
   
+  print(paste0("Values removed from ATEMP by Standard Deviation clean: ",
+               sum(is.na(dt$atemp2)) - sum(is.na(dt$atemp))))
+  # ##using rolling average. 
+  # dt[,atemp3 := dt$atemp] #raw data to ghost variable
+  # 
+  # dt[,m_atemp := mean_trim(atemp), by = key2] #mean of zone by hour for each day
+  # dt[,m_atemp_upper := m_atemp + 5 ,]
+  # dt[,m_atemp_lower := m_atemp - 5 ,]
+  # 
+  # dt$atemp2 <- ifelse(dt$atemp3 > dt$m_atemp_upper, NA, dt$atemp3) #remove more than 3 C away from mean
+  # dt$atemp2 <- ifelse(dt$atemp3 < dt$m_atemp_lower, NA, dt$atemp3)
+  # 
+  # dt[, roll_mean_airtemp := frollapply(atemp, 4, mean_rm, fill = NA, align = c("center")), by = "plotid"]
+  # dt$atemp2 <- ifelse(dt$atemp3 > (dt$roll_mean_airtemp + 5) |
+  #                       dt$atemp3 < (dt$roll_mean_airtemp - 5),
+  #                     NA, dt$atemp3)
+  # 
+  # print(paste0("Values removed from ATEMP by Rolling Average clean: ",
+  #              sum(is.na(dt$atemp3)) - sum(is.na(dt$atemp))))
+  # 
+
   
   
   keep <- c("time2", "logger", "plotid", "treatment", "grazed_ungrazed", "origin", "transect", "transect_s_treatment",
@@ -214,10 +204,12 @@ clean_data <- function(source_dir, output_dir, year){
   
   dt <- subset(dt, select = keep)
   
+  dt <- arrange(dt, time2)
+  
 
   # -------------------------------- Write data ----------------------------------------------
   # Create file name
-  file_name <- paste0(pool,"_",year(dt$time2[1]), "_cleaned.csv")
+  file_name <- paste0(pool,"_",year, "_cleaned.csv")
   out_path <- file.path(output_dir, file_name)
   
   dt$time2 <- format(as.POSIXct(dt$time2, tz="Etc/GMT-1"), format="%Y-%m-%d %H:%M:%S")
